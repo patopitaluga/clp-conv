@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es-es">
+<head>
+  <meta charset="utf-8">
+  <title>CLP money conversor</title>
+
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, viewport-fit=cover">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px 0 0;
+      font-family: sans-serif;
+    }
+    .cont {
+      box-sizing: border-box;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .hidden-input {
+      box-sizing: border-box;
+      font-family: monospace;
+      font-size: 18px;
+      width: 100%;
+      padding: 10px;
+      text-align: right;
+      opacity: 0;
+      z-index: 2;
+      position: absolute;
+      bottom: 0;
+    }
+    .hidden-input.visible {
+      opacity: 1;
+    }
+    label {
+      display: block;
+      position: relative;
+    }
+    .type-label {
+      display: block;
+      padding: 10px;
+    }
+    .display-price {
+      border-radius: 3px;
+      box-sizing: border-box;
+      cursor: text;
+      font-family: monospace;
+      font-size: 18px;
+      width: 100%;
+      padding: 10px;
+      text-align: right;
+      height: 45px;
+      border: 1px #666 solid;
+    }
+    .symbol {
+      color: #666;
+      font-style: italic;
+    }
+    .decimals {
+      color: #999;
+      font-size: .80em;
+      padding-left: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="cont">
+  <label>
+    <span class="type-label">CLP</span>
+    <input type="number" class="hidden-input" id="input-clp" step="any" placeholder="0" />
+    <div class="display-price" id="display-price--clp"></div>
+  </label>
+  <label>
+    <span class="type-label">USD</span>
+    <input type="number" class="hidden-input" id="input-usd" step="any" placeholder="0" />
+    <div class="display-price" id="display-price--usd"></div>
+  </label>
+  <label>
+    <span class="type-label">ARS (blue)</span>
+    <input type="number" class="hidden-input" id="input-ars" step="any" placeholder="0" />
+    <div class="display-price" id="display-price--ars"></div>
+  </label>
+  <button type="button">Guardar</button>
+  <hr style="margin-top: 50px"/>
+
+  <div>
+    Comparación:
+  </div>
+</div>
+<script>
+const inputClp = document.querySelector('#input-clp');
+const inputUsd = document.querySelector('#input-usd');
+const inputArs = document.querySelector('#input-ars');
+
+const USD1TOCLP = 869;
+const USD1TOARS = 885;
+
+const numberFromLocalMoney = (value) => {
+  return Number(value);
+  if (typeof value !== 'string') throw new Error('Expecting type string in numberFromLocalMoney param.');
+
+  formattedValue = value.replaceAll('.', '');
+  formattedValue = formattedValue.replaceAll(',', '.');
+
+  return Number(formattedValue);
+}
+
+const formatLocalMoney = (value, type) => {
+  if (isNaN(value)) throw new Error('Expecting number in formatLocalMoney param.');
+
+  let formattedValue = Number(Number(value).toFixed(2)); // toFixed returns string.
+  formattedValue = formattedValue.toLocaleString('de');
+
+  let symbol = '';
+  switch (type) {
+    case 'clp':
+      symbol = '<span class="symbol">$</span> ';
+      break;
+    case 'usd':
+      symbol = '<span class="symbol">u$s</span> ';
+      break;
+    default:
+      symbol = '<span class="symbol">$</span> ';
+  }
+
+  if (formattedValue.indexOf(',') === -1) formattedValue += ',00';
+  if (formattedValue.substr(-1) !== '0') formattedValue += '0';
+  formattedValue = formattedValue.substr(0, formattedValue.indexOf(',') + 3);
+  const parts = formattedValue.split(',');
+  formattedValue = parts[0] + '<span class="decimals">,' + parts[1] + '</span>';
+  return `${symbol}${formattedValue}`;
+};
+const updateMoneyDisplay = () => {
+  document.querySelector('#display-price--clp').innerHTML = formatLocalMoney(Number(inputClp.value));
+  document.querySelector('#display-price--usd').innerHTML = formatLocalMoney(Number(inputUsd.value));
+  document.querySelector('#display-price--ars').innerHTML = formatLocalMoney(Number(inputArs.value));
+}
+inputClp.addEventListener('focus', () => inputClp.className = 'hidden-input visible');
+inputClp.addEventListener('blur', () => inputClp.className = 'hidden-input');
+inputClp.addEventListener('keyup', (event) => {
+  const usd = (Number(inputClp.value) / USD1TOCLP).toFixed(2);
+  inputUsd.value = usd;
+  document.querySelector('#input-ars').value = (usd * USD1TOARS).toFixed(2);
+  updateMoneyDisplay();
+});
+inputUsd.addEventListener('focus', () => inputUsd.className = 'hidden-input visible');
+inputUsd.addEventListener('blur', () => inputUsd.className = 'hidden-input');
+inputUsd.addEventListener('keyup', (event) => {
+  document.querySelector('#input-clp').value = (Number(inputUsd.value) * USD1TOCLP).toFixed(2);
+  document.querySelector('#input-ars').value = (Number(inputUsd.value) * USD1TOARS).toFixed(2);
+  updateMoneyDisplay();
+});
+inputArs.addEventListener('focus', () => inputArs.className = 'hidden-input visible');
+inputArs.addEventListener('blur', () => inputArs.className = 'hidden-input');
+inputArs.addEventListener('keyup', (event) => {
+  const usd = (Number(inputArs.value) / USD1TOARS).toFixed(2);
+  inputClp.value = (usd * USD1TOCLP).toFixed(2);
+  inputUsd.value = usd;
+  updateMoneyDisplay();
+});
+inputArs.addEventListener('keyup', (event) => {
+  updateMoneyDisplay();
+});
+</script>
+</body>
+</html>
